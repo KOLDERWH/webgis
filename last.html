@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport"
+        content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Work</title>
+
+  <link rel="stylesheet"
+        href="https://js.arcgis.com/4.20/esri/themes/dark/main.css" />
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script> -->
+  <!-- <script src="https://js.arcgis.com/4.21/"></script> -->
+  <script src="js/Chart.min.js"></script>
+  <script src="js/init.js"></script>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    #infoDiv {
+      position: absolute;
+      top: 15px;
+      left: 60px;
+    }
+
+    #infoDiv input {
+      border: none;
+      box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 2px;
+    }
+
+    #optionsDiv {
+      background-color: dimgray;
+      color: white;
+      padding: 10px;
+      width: 350px;
+      display: none;
+    }
+
+    #chartPanel {
+      background: #fff;
+      font: "Avenir Next W00";
+      line-height: 1.5em;
+      overflow: auto;
+      padding: 10px;
+      width: 500px;
+      height: 260px;
+      /* display: none; */
+    }
+
+    .chart {
+      height: 240px;
+    }
+
+    #topbar {
+      display: none;
+    }
+
+    .action-button {
+      font-size: 20px;
+      background-color: transparent;
+      border: 1px solid rgb(42, 42, 40);
+      color: white;
+      height: 48px;
+      width: 48px;
+      text-align: center;
+      box-shadow: 0 0 1px rgba(0, 0, 0, 0.3);
+    }
+
+    .action-button:hover,
+    .action-button:focus {
+      background: white;
+      color: black;
+    }
+  </style>
+
+  <script>
+    require(["esri/Map",
+      "esri/views/SceneView",
+      "esri/views/MapView",
+      "esri/layers/FeatureLayer",
+      "esri/layers/TileLayer",
+      "esri/Graphic",
+      "esri/layers/GraphicsLayer",
+      "esri/layers/GroupLayer",
+      "esri/widgets/Search",
+      "esri/widgets/Legend",
+      "esri/rest/query",
+      "esri/rest/support/Query",
+      "esri/widgets/Expand",
+      "esri/widgets/LayerList",
+      "esri/widgets/DistanceMeasurement2D",
+      "esri/widgets/ScaleBar",
+      "esri/widgets/BasemapToggle",
+      "esri/widgets/Sketch",
+      "esri/renderers/UniqueValueRenderer"
+    ],
+      (Map, SceneView, MapView, FeatureLayer,
+        TileLayer, Graphic, GraphicsLayer, GroupLayer,
+        Search, Legend, query, Query, Expand, LayerList,
+        DistanceMeasurement2D, ScaleBar, BasemapToggle,
+        Sketch, UniqueValueRenderer
+      ) => {
+
+        const popupTemplate = {
+          title: "{CNTRY_NAME}, {CURR_CODE}",
+          content: [{
+            type: "fields",
+            fieldInfos: [
+              {
+                fieldName: "CNTRY_NAME",
+                label: "CNTRYNAME",
+                format: {
+                  places: 0,
+                  digitSeperator: true
+                }
+              },
+              {
+                fieldName: "POP_CNTRY",
+                label: "POP_CNTRY",
+                format: {
+                  places: 0,
+                  digitSeperator: true
+                }
+              },
+              {
+                fieldName: "Area",
+                label: "Area",
+                format: {
+                  places: 0,
+                  digitSeperator: true
+                }
+              },
+
+            ],
+          }],
+
+        };
+
+        //unique render
+        var sym1 = {
+          type: "simple-fill",
+          color: "blue",
+          outline: {
+            color: [128, 128, 128],
+            width: "0.2px",
+          }
+        };
+
+        var sym2 = {
+          type: "simple-fill",
+          color: "yellow",
+          outline: {
+            color: [0, 128, 128],
+            width: "0.2px",
+          }
+        };
+
+        var sym3 = {
+          type: "simple-fill",
+          color: "orange",
+          outline: {
+            color: [0, 128, 128],
+            width: "0.2px",
+          }
+        };
+
+        var sym4 = {
+          type: "simple-fill",
+          color: "red",
+          outline: {
+            color: [0, 128, 128],
+            width: "0.2px",
+          }
+        };
+
+        const uniquerenderer = {
+          type: "unique-value",
+          field: "POP_PANK",
+          defaultSymbol: {
+            type: "simple-marker",
+            color: "yellow",
+            size: 10,
+          },
+
+          uniqueValueInfos: [
+            {
+              value: 1,
+              symbol: {
+                type: "simple-marker",
+                color: "yellow",
+                size: 10,
+              },
+            },
+            {
+              value: 2,
+              symbol: {
+                type: "simple-marker",
+                color: "red",
+                size: 10,
+              },
+            },
+            {
+              value: 3,
+              symbol: {
+                type: "simple-marker",
+                color: "blue",
+                size: 10,
+              },
+            },
+            {
+              value: 4,
+              symbol: {
+                type: "simple-marker",
+                color: "white",
+                size: 10,
+              },
+            },
+            {
+              value: 5,
+              symbol: {
+                type: "simple-marker",
+                color: "punk",
+                size: 10,
+              },
+            },
+            {
+              value: 6,
+              symbol: {
+                type: "simple-marker",
+                color: "red",
+                size: 10,
+              },
+            },
+            {
+              value: 7,
+              symbol: {
+                type: "simple-marker",
+                color: "red",
+                size: 10,
+              },
+            },
+          ]
+
+        };
+
+        //classBreakRenderer
+        const ClassBreakRenderer = {
+          type: "class-breaks",
+          field: "Area",
+          defaultSymbol: {
+            type: "simple-fill",
+            color: "green",
+            size: 6,
+          },
+
+          classBreakInfos: [
+            {
+              minValue: 0,
+              maxValue: 100,
+              label: "<100",
+              symbol: sym1,
+            },
+            {
+              minValue: 100,
+              maxValue: 500,
+              label: "100<500",
+              symbol: sym2,
+            },
+            {
+              minValue: 500,
+              maxValue: 2000,
+              label: "500-2000",
+              symbol: sym3,
+            },
+            {
+              minValue: 2000,
+              maxValue: 6026,
+              label: ">2000",
+              symbol: sym4,
+            },
+          ]
+        };
+
+        //2Dmap
+        const worldImagery = new TileLayer({
+          portalItem: {
+            id: "10df2279f9684e4a9f6a7f08febac2a9" // world imagery
+          }
+        });
+        worldImagery.when(() => {
+          worldImagery.sublayers.forEach((layer) => {
+            if (layer.popupEnabled === true) {
+              layer.popupEnabled = false;
+            }
+          });
+        });
+
+        // this layer is only used to query for the intersecting country when the map is clicked
+        const countries = new FeatureLayer({
+          portalItem: {
+            id: "53a1e68de7e4499cad77c80daba46a94"
+          }
+        });
+
+        // clicked country feature will be added to this layer
+        const graphicsLayer = new GraphicsLayer({
+          blendMode: "destination-in",
+          title: "layer"
+        });
+
+        const tileLayer = new TileLayer({
+          portalItem: {
+            // bottom layer in the group layer
+            id: "10df2279f9684e4a9f6a7f08febac2a9" // world imagery
+          }
+        });
+        tileLayer.when(() => {
+          tileLayer.sublayers.forEach((layer) => {
+            if (layer.popupEnabled === true) {
+              layer.popupEnabled = false;
+            }
+          });
+        });
+
+        //3Dmap
+        const peaksUrl = "http://localhost:6080/arcgis/rest/services/wh/worldMap/MapServer/2";
+        const worldmap = new FeatureLayer({
+          url: peaksUrl,
+          outFields: ["*"],
+          visible: false,
+          renderer: ClassBreakRenderer,
+          popupTemplate: popupTemplate,
+        });
+        const citymap = new FeatureLayer({
+          url: " http://localhost:6080/arcgis/rest/services/wh/worldMap/MapServer/0",
+          visible: false,
+          renderer: uniquerenderer,
+        });
+        const riverdmap = new FeatureLayer({
+          url: "http://localhost:6080/arcgis/rest/services/wh/worldMap/MapServer/1",
+          visible: false,
+
+        });
+
+        const resultsLayer = new GraphicsLayer();
+
+        const params = new Query({
+          returnGeometry: true,
+          outFields: ["*"]
+        });
+
+        const groupLayer = new GroupLayer({
+          layers: [
+            tileLayer,
+            // world imagery layer will show where it overlaps with the graphicslayer
+            graphicsLayer
+          ],
+          opacity: 0 // initially this layer will be transparent
+        });
+        const switchButton = document.getElementById("switch-btn");
+
+        const appConfig = {
+          mapView: null,
+          sceneView: null,
+          activeView: null,
+          container: "viewDiv"
+        };
+
+        //2Dconfig
+        const initialViewParams = {
+          zoom: 2,
+          center: [102, 26],
+          container: appConfig.container,
+          constraints: {
+            maxZoom: 3,
+            minZoom: 20,
+          }
+        };
+
+        const map = new Map({
+          layers: [worldImagery, groupLayer]
+        });
+
+        //3Dconfig
+        const Sceneinitial = {
+          zoom: 6,
+          center: [45, 25],
+          container: appConfig.container,
+          popup: {
+            dockEnabled: true,
+            dockOptions: {
+              position: "top-right",
+              breakpoint: false,
+            }
+          }
+        };
+
+        const scenemap = new Map({
+          basemap: "streets-night-vector",
+          layers: [worldmap, resultsLayer, citymap, riverdmap,],
+        });
+
+        // create 2D view and and set active
+        appConfig.mapView = createView(initialViewParams, "2d");
+        appConfig.mapView.map = map;
+
+        // create 3D view, won't initialize until container is set
+        Sceneinitial.container = null;
+        Sceneinitial.map = scenemap;
+        appConfig.sceneView = createView(Sceneinitial, "3d");
+
+        appConfig.activeView = appConfig.mapView;
+
+        //Widget3D
+        var mapLegend = new Legend({
+          view: appConfig.sceneView,
+          layerInfos: [
+            { layer: citymap, title: "The City of the world" },
+            { layer: riverdmap, title: "The River of the world" },
+            { layer: worldmap, title: "The Area of the world" },
+          ],
+        });
+
+        let isEdit = true;
+
+        const basemapToggle = new BasemapToggle({
+          view: appConfig.sceneView,
+          nextBasemap: "streets-relief-vector",
+        });
+
+        const sketch = new Sketch({
+          layer: resultsLayer,
+          view: appConfig.sceneView,
+          creationMode: "update"
+        });
+        var layerlist = new LayerList({
+          view: appConfig.sceneView,
+        });
+
+        Switchbtn("basemapButton", basemapToggle, "bottom-left");
+        Switchbtn("sketchButton", sketch, "bottom-left");
+        Switchbtn("queryButton", optionsDiv, "bottom-right");
+        Switchbtn("listButton", layerlist, "bottom-right");
+
+        const bkExpand = new Expand({
+          view: appConfig.sceneView,
+          content: mapLegend,
+          expanded: false,
+        });
+
+        appConfig.sceneView.when(function () {
+          document.getElementById("doBtn").addEventListener("click", doQuery);
+          appConfig.sceneView.ui.add(bkExpand, "bottom-left");
+          appConfig.sceneView.ui.add("topbar", "top-left");
+          appConfig.sceneView.goTo({
+            center: [100, 60],
+            zoom: 2,
+          });
+        });
+
+        //Widget2D
+        const chartExpand = new Expand({
+          view: appConfig.sceneView,
+          content: document.getElementById("chartPanel"),
+          expanded: false,
+        });
+
+        var searchWidget = new Search({
+          view: appConfig.mapView,
+          includeDefaultSources: false,
+          sources: [
+            {
+              layer: worldmap,
+              searchFields: ["CNTRY_NAME "],
+              displayField: "CNTRY_NAME ",
+              exactMatch: false,
+              outFields: ["CNTRY_NAME "],
+              name: "Congressional Districts",
+              placeholder: "example: china"
+            },
+          ]
+        });
+
+        var measure = new DistanceMeasurement2D({
+          view: appConfig.mapView,
+        });
+
+        var scalebar = new ScaleBar({
+          view: appConfig.mapView,
+        });
+
+        appConfig.mapView.when(() => {
+          DataLayer = worldmap;
+          appConfig.mapView.ui.add(chartExpand, "bottom-left");
+          appConfig.mapView.ui.add(measure, "bottom-right");
+          appConfig.mapView.ui.add(scalebar, "top-left");
+          const query = {
+            geometry: appConfig.mapView.center,
+            returnGeometry: true,
+            outFields: ["*"]
+          };
+          highlightCountry(query, appConfig.mapView.center);
+          appConfig.mapView.ui.add(searchWidget, "top-right");
+        });
+
+        const value = document.getElementById("valSelect");
+
+        //3DFunction
+        function doQuery() {
+          resultsLayer.removeAll();
+          params.where = "CNTRY_NAME = " + value.value;
+          query
+            .executeQueryJSON(peaksUrl, params)
+            .then(getResults)
+            .catch(promiseRejected);
+        }
+
+        function getResults(response) {
+          const peakResults = response.features.map(function (feature) {
+            feature.symbol = sym1;
+            feature.popupTemplate = popupTemplate;
+            return feature;
+          });
+
+          resultsLayer.addMany(peakResults);
+
+          appConfig.sceneView
+            .goTo(peakResults)
+            .then(function () {
+              appConfig.sceneView.popup.open({
+                features: peakResults,
+                featureMenuOpen: true,
+                updateLocationEnabled: true
+              });
+            })
+            .catch(function (error) {
+              if (error.name != "AbortError") {
+                console.error(error);
+              }
+            });
+        }
+
+        function promiseRejected(error) {
+          console.error("Promise rejected: ", error.message);
+        }
+
+        function Switchbtn(btn, type, position) {
+          document.getElementById(btn).addEventListener("click", function () {
+            if (isEdit == false) {
+              appConfig.sceneView.ui.remove(type);
+            }
+            else {
+              appConfig.sceneView.ui.add(type, position);
+            }
+            isEdit = !isEdit;
+          });
+          appConfig.sceneView.ui.remove(type);
+        };
+
+        // switch the view between 2D and 3D 
+        switchButton.addEventListener("click", () => {
+          switchView();
+        });
+
+        // Switches the 2D and 3D 
+        function switchView() {
+          const activeViewpoint = appConfig.activeView.viewpoint.clone();
+
+          // remove the reference to the container for the previous view
+          appConfig.activeView.container = null;
+
+          if (appConfig.activeView.type == "3d") {
+
+            appConfig.mapView.container = appConfig.container;
+            appConfig.activeView = appConfig.mapView;
+
+            switchButton.value = "3D";
+            document.getElementById("optionsDiv").style.display = 'none';
+            document.getElementById("topbar").style.display = 'none';
+          } else {
+            appConfig.sceneView.container = appConfig.container;
+            appConfig.activeView = appConfig.sceneView;
+            switchButton.value = "2D";
+            document.getElementById("optionsDiv").style.display = 'block';
+            document.getElementById("topbar").style.display = 'block';
+          }
+        };
+
+        function createView(params, type) {
+          let view;
+          if (type === "2d") {
+            view = new MapView(params);
+          } else {
+            view = new SceneView(params);
+          }
+          return view;
+        };
+
+        //2DFunction
+        appConfig.mapView.on("click", async (event) => {
+          const query = {
+            geometry: appConfig.mapView.toMap(event),
+            returnGeometry: true,
+            outFields: ["*"]
+          };
+          highlightCountry(query, query.geometry);
+          calculateBuffer(query.geometry);
+        });
+
+        async function highlightCountry(query, zoomGeometry) {
+          const symbol = {
+            type: "simple-fill",
+            color: "rgba(255, 255, 255, 1)",
+            outline: null
+          };
+
+          // query the countries layer for a country that intersects the clicked point
+          const {
+            features: [feature]
+          } = await countries.queryFeatures(query);
+
+          if (feature) {
+            graphicsLayer.graphics.removeAll();
+            feature.symbol = symbol;
+            // add the country to the graphics layer
+            graphicsLayer.graphics.add(feature);
+            appConfig.mapView.goTo(
+              {
+                // center: zoomGeometry,
+                target: zoomGeometry,
+                extent: feature.geometry.extent.clone().expand(1),
+              },
+              { duration: 1000 }
+            );
+            // blur the world imagery basemap so that the clicked country can be highlighted
+            worldImagery.effect = "blur(8px) brightness(1.2) grayscale(0.8)";
+            // set the group layer transparency to 1.
+            // also increase the layer brightness and add drop-shadow to make the clicked country stand out.
+            groupLayer.effect = "brightness(1.5) drop-shadow(0, 0px, 12px)";
+            groupLayer.opacity = 1;
+          }
+          // did not click on a country. remove effects
+          else {
+            worldImagery.effect = null;
+            groupLayer.effect = null;
+          }
+        }
+
+        function calculateBuffer(geometry) {
+
+          queryLayerViewAgeStats(geometry).then(function (newData) {
+            updateChart(newData);
+          });
+        };
+
+        let chart;
+        function updateChart(newData) {
+          chartExpand.expanded = true;
+
+          const femaleAgeData = newData[0];
+          const maleAgeData = newData[1];
+          if (!chart) {
+            const canvasElement = document.getElementById("chart");
+
+            chart = new Chart(canvasElement.getContext("2d"), {
+              type: "horizontalBar",
+              data: {
+                labels: [
+                  "2019",
+                  "2015",
+                  "2010",
+                  "2005",
+                  "2000",
+                  "1995",
+                  "1990",
+                ],
+                datasets: [
+                  {
+                    label: "Female",
+                    backgroundColor: "#B266FF",
+                    borderColor: "#7F00FF",
+                    borderWidth: 0.25,
+                    data: femaleAgeData
+                  },
+                  {
+                    label: "Male",
+                    backgroundColor: "#0080FF",
+                    borderColor: "#004C99",
+                    borderWidth: 0.25,
+                    data: maleAgeData
+                  }
+                ]
+              },
+              options: {
+                responsive: false,
+                legend: {
+                  position: "bottom"
+                },
+                title: {
+                  display: true,
+                  text: "Immigration Status"
+                },
+                scales: {
+                  yAxes: [
+                    {
+                      categorySpacing: 0,
+                      barThickness: 12,
+                      stacked: true,
+
+                      scaleLabel: {
+                        display: true,
+                        labelString: "Number"
+                      }
+                    }
+                  ],
+                  xAxes: [
+                    {
+                      ticks: {
+                        callback: function (value) {
+                          const val = Math.abs(parseInt(value));
+                          return numberWithCommas(val);
+                        }
+                      },
+                      scaleLabel: {
+                        display: true,
+                        labelString: "Population",
+                      }
+                    }
+                  ]
+                },
+                tooltips: {
+                  callbacks: {
+                    label: function (tooltipItem, data) {
+                      return (
+                        data.datasets[tooltipItem.datasetIndex].label +
+                        ": " +
+                        numberWithCommas(Math.abs(tooltipItem.xLabel))
+                      );
+                    }
+                  }
+                }
+              }
+            });
+          } else {
+            chart.data.datasets[0].data = femaleAgeData;
+            chart.data.datasets[1].data = maleAgeData;
+            chart.update();
+          }
+        }
+
+        function numberWithCommas(value) {
+          value = value || 0;
+          return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function queryLayerViewAgeStats(geomotry) {
+          let femaleAgeData = [],
+            maleAgeData = [];
+          const queryfields = ["male1990", "male1995", "male2000", "male2005", "male2010", "male2015", "male2019", "female1990",
+            "female1995", "female2000", "female2005", "female2010", "female2015", "female2019"];
+          const query = worldmap.createQuery();
+          query.geometry = geomotry;
+          query.outFields = queryfields;
+
+          return worldmap.queryFeatures(query)
+            .then(function (results) {
+
+              const attributes = results.features[0].attributes;
+              for (var key in attributes) {
+                if (key.includes("female")) {
+                  maleAgeData.push(-Math.abs(attributes[key]));
+                } else {
+                  femaleAgeData.push(attributes[key]);
+                }
+              }
+              return [femaleAgeData, maleAgeData];
+            })
+            .catch(function (error) {
+              console.log(error);
+            });
+        }
+
+      });
+
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+  <div id="infoDiv">
+    <input class="esri-component esri-widget--button esri-widget esri-interactive"
+           type="button"
+           id="switch-btn"
+           value="3D" />
+  </div>
+  <div class="esri-widget"
+       id="optionsDiv">
+    <h2>Country of the World</h2>
+    <span>coutry name is</span>
+    <select class="esri-widget"
+            id="valSelect">
+      <option value="'Albania'">Albania</option>
+      <option value="'China'">China</option>
+      <option value="'France'">France</option>
+      <option value="'Germany'">Germany</option>
+      <option value="'Japan'">Japan</option>
+      <option value="'Mexico'">Mexico</option>
+      <option value="'Panama'">Panama</option>
+      <option value="'United Kingdom'">United Kingdom</option>
+      <option value="'United States of America'">America</option>
+      <option value="'Republic of Korea'">Korea</option>
+    </select>
+    <br />
+    <br />
+    <button class="esri-widget"
+            id="doBtn">Query</button> <br />
+  </div>
+
+  <div id="chartPanel"><canvas id="chart"
+            class="chart"></canvas></div>
+  <div id='Tools'>
+    <div id='topbar'>
+      <button class="action-button esri-icon-basemap"
+              id="basemapButton"
+              type="button"
+              title="basemap"></button>
+      <button class="action-button esri-icon-edit"
+              id="sketchButton"
+              type="button"
+              title="edit"></button>
+      <button class="action-button esri-icon-search"
+              id="queryButton"
+              type="button"
+              title="search"></button>
+      <button class="esri-icon-legend"
+              class="action-button"
+              id="listButton"
+              type="button"
+              title="list"></button>
+    </div>
+</body>
+
+</html>
